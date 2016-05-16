@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:sec="http://www.springframework.org/schema/security"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/security
+		http://www.springframework.org/schema/security/spring-security-3.2.xsd 
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+	<context:component-scan base-package="com.wjm.security_framework.authrization" />
+	<context:component-scan base-package="com.wjm.security_framework.authentication" />	
+
+	<!-- 配置不过滤的资源（静态资源及登录相关） -->
+	<sec:http pattern="/static/**/*" security="none"></sec:http>
+	
+	
+	<sec:http pattern="/login.jsp" security="none"></sec:http>
+	<sec:http pattern="/access_denied.jsp" security="none"></sec:http>
+	
+	<sec:http auto-config="true">
+		
+		<sec:form-login login-page="/login.jsp" authentication-failure-url="/login.jsp"
+			authentication-success-handler-ref="authenticationSuccessHandler"/>
+		
+		<sec:logout invalidate-session="true" logout-url="/logout"
+			logout-success-url="/login.jsp" />
+		
+		<sec:access-denied-handler  error-page="/access_denied.jsp"/>
+		
+		<sec:remember-me 
+			services-ref="springSocialSecurityRememberMeServices"
+			key="springSocialSecurity" />
+		
+        <sec:custom-filter ref="authrizationFilter" before="FILTER_SECURITY_INTERCEPTOR" />
+
+	</sec:http>
+
+	<bean id="authrizationFilter" class="com.wjm.security_framework.authrization.FilterSecurityInterceptor">
+        <property name="authenticationManager" ref="myAuthenticationManager" />
+        <!-- 访问决策器，决定某个用户具有的角色，是否有足够的权限去访问某个资源     -->
+        <property name="accessDecisionManager" ref="accessDecisionManager" />
+        <property name="securityMetadataSource" ref="MySecurityMetadataSource" />
+        
+    </bean>
+    
+    <!-- 资源源数据定义，将所有的资源和权限对应关系建立起来，即定义某一资源可以被哪些角色访问     -->
+    <bean id="MySecurityMetadataSource" init-method="loadResourceDefine"  class="com.wjm.security_framework.authrization.MySecurityMetadataSource" />
+       
+	<sec:authentication-manager alias="myAuthenticationManager">
+		<sec:authentication-provider user-service-ref="defaultUserDetailsService" >
+		</sec:authentication-provider>
+	</sec:authentication-manager>
+	
+	<bean id="authenticationSuccessHandler" class="com.wjm.security_framework.authentication.CustomSuccessHandler">
+		<property name="defaultTargetUrl" value="/index" />
+	</bean>
+	
+
+	<bean id="springSocialSecurityRememberMeServices"
+		class="org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices">
+		<property name="userDetailsService" ref="defaultUserDetailsService" />
+		<property name="tokenRepository" ref="tokenRepository" />
+		<property name="key" value="springSocialSecurity" />
+		<property name="alwaysRemember" value="true" />
+		<property name="tokenValiditySeconds" value="3600" />
+	</bean>
+
+	<bean id="tokenRepository"
+		class="org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl">
+		<property name="createTableOnStartup" value="false" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+</beans>
