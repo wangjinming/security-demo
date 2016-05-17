@@ -28,9 +28,6 @@
 		
 		<sec:access-denied-handler  error-page="/access_denied.jsp"/>
 		
-		<sec:remember-me 
-			services-ref="springSocialSecurityRememberMeServices"
-			key="springSocialSecurity" />
 		
         <sec:custom-filter ref="authrizationFilter" before="FILTER_SECURITY_INTERCEPTOR" />
 
@@ -49,22 +46,16 @@
        
 	<sec:authentication-manager alias="myAuthenticationManager">
 		<sec:authentication-provider user-service-ref="defaultUserDetailsService" >
+			<sec:password-encoder hash="md5">
+                <sec:salt-source user-property="username"/>  
+            </sec:password-encoder> 
 		</sec:authentication-provider>
 	</sec:authentication-manager>
 	
 	<bean id="authenticationSuccessHandler" class="com.wjm.security_framework.authentication.CustomSuccessHandler">
 		<property name="defaultTargetUrl" value="/index" />
 	</bean>
-	
 
-	<bean id="springSocialSecurityRememberMeServices"
-		class="org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices">
-		<property name="userDetailsService" ref="defaultUserDetailsService" />
-		<property name="tokenRepository" ref="tokenRepository" />
-		<property name="key" value="springSocialSecurity" />
-		<property name="alwaysRemember" value="true" />
-		<property name="tokenValiditySeconds" value="3600" />
-	</bean>
 
 	<bean id="tokenRepository"
 		class="org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl">
